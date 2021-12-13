@@ -1,7 +1,7 @@
 import axios from "axios";
 import React from "react";
 import styled from "styled-components";
-import { Box, BoxTitle, BoxWrap } from "../styles";
+import { Box, BoxBody, BoxTitle, BoxWrap } from "../styles";
 import { responseDecrypt } from "../utils/ARIAUtils";
 import BoxComponent from "./BoxComponent";
 import _ from "lodash";
@@ -9,12 +9,20 @@ import _ from "lodash";
 function ApiApplyProcessComponent() {
   const [userInfo, setUserInfo] = React.useState<any>({});
   const [decryptUserInfo, setDecryptUserInfo] = React.useState<string>("");
+  const [applyInfo, setApplyInfo] = React.useState<any>({});
+  const [decryptApplyInfo, setDecryptApplyInfo] = React.useState<string>("");
 
   React.useEffect(() => {
     const decrypt = _.cloneDeep(userInfo);
     responseDecrypt(decrypt, ["status", "password", "createdAt", "updatedAt"]);
     setDecryptUserInfo(JSON.stringify(decrypt, null, "\t"));
   }, [userInfo]);
+
+  React.useEffect(() => {
+    const decrypt = _.cloneDeep(applyInfo);
+    responseDecrypt(decrypt, ["status", "id", "createdAt", "updatedAt"]);
+    setDecryptApplyInfo(JSON.stringify(decrypt, null, "\t"));
+  }, [applyInfo]);
 
   const RequestUserInfo = React.useCallback(async (): Promise<string> => {
     const token = process.env.REACT_APP_USER_JWT!;
@@ -33,7 +41,27 @@ function ApiApplyProcessComponent() {
     }
   }, []);
 
-  const RequestDecryptUserInfo = React.useCallback(() => {}, []);
+  const userApiApply = React.useCallback(async () => {
+    const token = process.env.REACT_APP_USER_JWT!;
+
+    try {
+      const res = await axios.post(
+        "http://localhost:8080/apiService/apply",
+        {
+          purpose: "연구목적",
+        },
+        {
+          headers: {
+            authorization: token,
+          },
+        }
+      );
+
+      setApplyInfo(res.data);
+    } catch (err) {
+      console.error(err);
+    }
+  }, []);
 
   return (
     <Wrap>
@@ -50,13 +78,18 @@ function ApiApplyProcessComponent() {
       <BoxWrap>
         <Box>
           <BoxTitle>User Apply Api</BoxTitle>
+          <BoxBody>
+            <button onClick={userApiApply}>api apply</button>
+          </BoxBody>
         </Box>
-        <Box>
-          <BoxTitle>Application Information</BoxTitle>
-        </Box>
-        <Box>
-          <BoxTitle>Decrypt Application Information</BoxTitle>
-        </Box>
+        <BoxComponent
+          title="Application Information"
+          customBodyText={JSON.stringify(applyInfo, null, "\t")}
+        />
+        <BoxComponent
+          title="Decrypt Application Information"
+          customBodyText={decryptApplyInfo}
+        />
       </BoxWrap>
       <BoxWrap>
         <Box>
