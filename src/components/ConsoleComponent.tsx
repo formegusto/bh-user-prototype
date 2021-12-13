@@ -3,6 +3,8 @@ import React from "react";
 import styled from "styled-components";
 import _ from "lodash";
 import { responseDecrypt } from "../utils/ARIAUtils";
+import xlsx from "xlsx";
+import ExcelTestButton from "./ExcelTestButton";
 
 type Props = {
   apiKey: string;
@@ -36,6 +38,14 @@ function ConsoleComponent({ apiKey, decryptKey }: Props) {
     setDecryptResult(decrypt);
   }, [decryptKey, result]);
 
+  const onExcelDownload = React.useCallback(() => {
+    const ws = xlsx.utils.json_to_sheet(decryptResult.requestQuery);
+    const wb = xlsx.utils.book_new();
+
+    xlsx.utils.book_append_sheet(wb, ws, "Sheet1");
+    xlsx.writeFile(wb, "test.xlsx");
+  }, [decryptResult]);
+
   return (
     <Wrap>
       <KeyBlock>
@@ -55,6 +65,10 @@ function ConsoleComponent({ apiKey, decryptKey }: Props) {
         </code>
       </Result>
       <button onClick={onDecryptResult}>Decrypt</button>
+      {/* {decryptResult && (
+        <button onClick={onExcelDownload}>Excel Download</button>
+      )} */}
+      <ExcelTestButton />
     </Wrap>
   );
 }
