@@ -2,44 +2,82 @@ import axios from "axios";
 import React from "react";
 import styled from "styled-components";
 import { Box, BoxBody, BoxTitle, BoxWrap } from "../styles";
-import { responseDecrypt } from "../utils/ARIAUtils";
+import {
+  encryptProcess,
+  requestBodyEncrypt,
+  responseDecrypt,
+} from "../utils/ARIAUtils";
 import BoxComponent from "./BoxComponent";
 import _ from "lodash";
 
 function ApiApplyProcessComponent() {
+  const [token, setToken] = React.useState<any>({});
+  const [decryptToken, setDecryptToken] = React.useState<any>({});
   const [userInfo, setUserInfo] = React.useState<any>({});
-  const [decryptUserInfo, setDecryptUserInfo] = React.useState<string>("");
+  const [decryptUserInfo, setDecryptUserInfo] = React.useState<any>({});
   const [applyInfo, setApplyInfo] = React.useState<any>({});
-  const [decryptApplyInfo, setDecryptApplyInfo] = React.useState<string>("");
+  const [decryptApplyInfo, setDecryptApplyInfo] = React.useState<any>({});
+  const [confirmInfo, setConfirmInfo] = React.useState<any>({});
+  const [decryptConfirmInfo, setDecryptConfirmInfo] = React.useState<any>({});
+
+  React.useEffect(() => {
+    const userJoinInfo = {
+      username: "keti1215",
+      email: "keti@keti.re.kr",
+      phone: "070-xxxx-xxxx",
+      nickname: "keti_user",
+      password: "keti123$",
+    };
+    requestBodyEncrypt(userJoinInfo);
+    axios
+      .post("http://localhost:8080/user", userJoinInfo)
+      .then((res) => {
+        setToken({ token: res.data.token });
+      })
+      .catch((err) => {
+        console.error(err);
+      });
+  }, []);
+
+  React.useEffect(() => {
+    const decrypt = _.cloneDeep(token);
+    responseDecrypt(decrypt, ["status"]);
+    setDecryptToken(decrypt);
+  }, [token]);
+
+  React.useEffect(() => {
+    const token = decryptToken.token;
+    axios
+      .get("http://localhost:8080/user/check", {
+        headers: {
+          authorization: token,
+        },
+      })
+      .then((res) => {
+        setUserInfo(res.data.user);
+      })
+      .catch((err) => {
+        console.error(err);
+      });
+  }, [decryptToken]);
 
   React.useEffect(() => {
     const decrypt = _.cloneDeep(userInfo);
-    responseDecrypt(decrypt, ["status", "password", "createdAt", "updatedAt"]);
-    setDecryptUserInfo(JSON.stringify(decrypt, null, "\t"));
+    responseDecrypt(decrypt, ["password", "createdAt", "updatedAt"]);
+    setDecryptUserInfo(decrypt);
   }, [userInfo]);
 
   React.useEffect(() => {
     const decrypt = _.cloneDeep(applyInfo);
-    responseDecrypt(decrypt, ["status", "id", "createdAt", "updatedAt"]);
-    setDecryptApplyInfo(JSON.stringify(decrypt, null, "\t"));
+    responseDecrypt(decrypt, ["id", "createdAt", "updatedAt"]);
+    setDecryptApplyInfo(decrypt);
   }, [applyInfo]);
 
-  const RequestUserInfo = React.useCallback(async (): Promise<string> => {
-    const token = process.env.REACT_APP_USER_JWT!;
-
-    try {
-      const res = await axios.get("http://localhost:8080/user/check", {
-        headers: {
-          authorization: token,
-        },
-      });
-
-      setUserInfo(res.data);
-      return JSON.stringify(res.data, null, "\t");
-    } catch (err) {
-      return "error!";
-    }
-  }, []);
+  React.useEffect(() => {
+    const decrypt = _.cloneDeep(confirmInfo);
+    responseDecrypt(decrypt, ["id", "createdAt", "updatedAt"]);
+    setDecryptConfirmInfo(decrypt);
+  }, [confirmInfo]);
 
   const userApiApply = React.useCallback(async () => {
     const token = process.env.REACT_APP_USER_JWT!;
@@ -48,7 +86,7 @@ function ApiApplyProcessComponent() {
       const res = await axios.post(
         "http://localhost:8080/apiService/apply",
         {
-          purpose: "연구목적",
+          purpose: encryptProcess("연구목적"),
         },
         {
           headers: {
@@ -57,22 +95,53 @@ function ApiApplyProcessComponent() {
         }
       );
 
-      setApplyInfo(res.data);
+      setApplyInfo(res.data.application);
     } catch (err) {
       console.error(err);
     }
   }, []);
 
+  const adminApiConfirm = React.useCallback(async () => {
+    const requestAdminKey = process.env.REACT_APP_ADMIN_KEY!;
+
+    try {
+      const res = await axios.patch(
+        "http://localhost:8080/admin/apiService/confirm",
+        {
+          id: encryptProcess(applyInfo.id),
+        },
+        {
+          headers: {
+            authorization: requestAdminKey,
+          },
+        }
+      );
+      setConfirmInfo(res.data.application);
+    } catch (err) {
+      console.error(err);
+    }
+  }, [applyInfo]);
+
   return (
     <Wrap>
       <BoxWrap>
         <BoxComponent
+          title="Token Information"
+          customBodyText={JSON.stringify(token, null, "\t")}
+        />
+        <BoxComponent
+          title="Decrypt Token Information"
+          customBodyText={JSON.stringify(decryptToken, null, "\t")}
+        />
+      </BoxWrap>
+      <BoxWrap>
+        <BoxComponent
           title="User Information"
-          setBodyRequestFunction={RequestUserInfo}
+          customBodyText={JSON.stringify(userInfo, null, "\t")}
         />
         <BoxComponent
           title="Decrypt User Information"
-          customBodyText={decryptUserInfo}
+          customBodyText={JSON.stringify(decryptUserInfo, null, "\t")}
         />
       </BoxWrap>
       <BoxWrap>
@@ -88,19 +157,24 @@ function ApiApplyProcessComponent() {
         />
         <BoxComponent
           title="Decrypt Application Information"
-          customBodyText={decryptApplyInfo}
+          customBodyText={JSON.stringify(decryptApplyInfo, null, "\t")}
         />
       </BoxWrap>
       <BoxWrap>
         <Box>
           <BoxTitle>Admin Confirm Api Application</BoxTitle>
+          <BoxBody>
+            <button onClick={adminApiConfirm}>api confirm</button>
+          </BoxBody>
         </Box>
-        <Box>
-          <BoxTitle>Application Information</BoxTitle>
-        </Box>
-        <Box>
-          <BoxTitle>Decrypt Application Information</BoxTitle>
-        </Box>
+        <BoxComponent
+          title="Application Information"
+          customBodyText={JSON.stringify(confirmInfo, null, "\t")}
+        />
+        <BoxComponent
+          title="Decrypt Application Information"
+          customBodyText={JSON.stringify(decryptConfirmInfo, null, "\t")}
+        />
       </BoxWrap>
     </Wrap>
   );
