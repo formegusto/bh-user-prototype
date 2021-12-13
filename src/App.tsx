@@ -1,13 +1,16 @@
 import styled from "styled-components";
 import ApiApplyProcessContainer from "./containers/ApiApplyProcessContainer";
 import ConsoleContainer from "./containers/ConsoleContainer";
+import { ConsoleInfoProvider } from "./store";
 
 function App() {
   return (
-    <Wrap>
-      <ApiApplyProcessContainer />
-      <ConsoleContainer />
-    </Wrap>
+    <ConsoleInfoProvider>
+      <Wrap>
+        <ApiApplyProcessContainer />
+        <ConsoleContainer />
+      </Wrap>
+    </ConsoleInfoProvider>
   );
 }
 

@@ -60,8 +60,13 @@ export function encryptProcess(plainText: string): Uint8Array {
   return cipherBuffer;
 }
 
-export function decryptProcess(cipherText: string): string {
-  const communityKey = process.env.REACT_APP_COMMUNITY_KEY!;
+export function decryptProcess(
+  cipherText: string,
+  decryptKey?: string
+): string {
+  const communityKey = decryptKey
+    ? decryptKey
+    : process.env.REACT_APP_COMMUNITY_KEY!;
   const aria = new ARIAEngine(256);
   const mk = stringToByte(communityKey, "ascii");
   aria.setKey(mk);
@@ -98,13 +103,25 @@ export function decryptProcess(cipherText: string): string {
   return decodedText;
 }
 
-export function responseDecrypt(body: any, exclude?: string[]): any {
+export function responseDecrypt(
+  body: any,
+  decryptKey?: string,
+  exclude?: string[]
+): any {
   Object.keys(body).forEach((key) => {
-    if (typeof body[key] === "object") {
-      responseDecrypt(body[key], exclude);
+    if (Array.isArray(body[key])) {
+      for (let i = 0; i < body[key].length; i++) {
+        if (typeof body[key][i] === "object") {
+          responseDecrypt(body[key][i], decryptKey, exclude);
+        } else {
+          body[key][i] = decryptProcess(body[key][i], decryptKey);
+        }
+      }
+    } else if (typeof body[key] === "object") {
+      responseDecrypt(body[key], decryptKey, exclude);
     } else {
       if (!exclude || !exclude.includes(key))
-        body[key] = decryptProcess(body[key]);
+        body[key] = decryptProcess(body[key], decryptKey);
     }
   });
 }

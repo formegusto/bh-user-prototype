@@ -1,5 +1,5 @@
 import axios from "axios";
-import React from "react";
+import React, { useContext } from "react";
 import styled from "styled-components";
 import { Box, BoxBody, BoxTitle, BoxWrap } from "../styles";
 import {
@@ -9,8 +9,10 @@ import {
 } from "../utils/ARIAUtils";
 import BoxComponent from "./BoxComponent";
 import _ from "lodash";
+import ConsoleInfoContext from "../store";
 
 function ApiApplyProcessComponent() {
+  const { actions } = useContext(ConsoleInfoContext);
   const [token, setToken] = React.useState<any>({});
   const [decryptToken, setDecryptToken] = React.useState<any>({});
   const [userInfo, setUserInfo] = React.useState<any>({});
@@ -41,7 +43,7 @@ function ApiApplyProcessComponent() {
 
   React.useEffect(() => {
     const decrypt = _.cloneDeep(token);
-    responseDecrypt(decrypt, ["status"]);
+    responseDecrypt(decrypt, undefined, ["status"]);
     setDecryptToken(decrypt);
   }, [token]);
 
@@ -63,24 +65,26 @@ function ApiApplyProcessComponent() {
 
   React.useEffect(() => {
     const decrypt = _.cloneDeep(userInfo);
-    responseDecrypt(decrypt, ["password", "createdAt", "updatedAt"]);
+    responseDecrypt(decrypt, undefined, ["password", "createdAt", "updatedAt"]);
     setDecryptUserInfo(decrypt);
   }, [userInfo]);
 
   React.useEffect(() => {
     const decrypt = _.cloneDeep(applyInfo);
-    responseDecrypt(decrypt, ["id", "createdAt", "updatedAt"]);
+    responseDecrypt(decrypt, undefined, ["id", "createdAt", "updatedAt"]);
     setDecryptApplyInfo(decrypt);
-  }, [applyInfo]);
+    actions.setApiKey(decrypt.apiKey);
+    actions.setDecryptKey(decrypt.decryptKey);
+  }, [applyInfo, actions]);
 
   React.useEffect(() => {
     const decrypt = _.cloneDeep(confirmInfo);
-    responseDecrypt(decrypt, ["id", "createdAt", "updatedAt"]);
+    responseDecrypt(decrypt, undefined, ["id", "createdAt", "updatedAt"]);
     setDecryptConfirmInfo(decrypt);
   }, [confirmInfo]);
 
   const userApiApply = React.useCallback(async () => {
-    const token = process.env.REACT_APP_USER_JWT!;
+    const token = decryptToken.token!;
 
     try {
       const res = await axios.post(
@@ -99,7 +103,7 @@ function ApiApplyProcessComponent() {
     } catch (err) {
       console.error(err);
     }
-  }, []);
+  }, [decryptToken]);
 
   const adminApiConfirm = React.useCallback(async () => {
     const requestAdminKey = process.env.REACT_APP_ADMIN_KEY!;

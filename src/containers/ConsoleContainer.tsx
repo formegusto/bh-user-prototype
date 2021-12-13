@@ -1,7 +1,10 @@
+import { useContext } from "react";
 import ConsoleComponent from "../components/ConsoleComponent";
+import ConsoleInfoContext from "../store";
 
 function ConsoleContainer() {
-  return <ConsoleComponent />;
+  const { state } = useContext(ConsoleInfoContext);
+  return <ConsoleComponent {...state} />;
 }
 
 export default ConsoleContainer;
