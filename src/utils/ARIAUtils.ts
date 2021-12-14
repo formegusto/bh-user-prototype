@@ -23,28 +23,25 @@ export function bytesToString(bytes: any, type: "ascii" | "unicode"): string {
   }
 }
 
-export function encryptProcess(plainText: string): Uint8Array {
-  const communityKey = process.env.REACT_APP_COMMUNITY_KEY!;
+export function encryptProcess(plainText: string): string {
+  const adminKey = process.env.REACT_APP_COMMUNITY_KEY!;
   const aria = new ARIAEngine(256);
-  const mk = stringToByte(communityKey, "ascii");
+  const mk = stringToByte(adminKey, "ascii");
   aria.setKey(mk);
   aria.setupRoundKeys();
 
   const pt = stringToByte(plainText, "unicode");
   const pt16: Uint8Array[] = [];
 
-  console.log(plainText, pt);
   pt.forEach((p, i) => {
     if ((i + 1) % 16 === 0 || i + 1 === pt.length) {
-      const _p = new Uint8Array(16);
-      _p.set(pt.slice(Math.floor(i / 16) * 16, i + 1));
-
-      pt16.push(_p);
+      pt16.push(pt.slice(Math.floor(i / 16) * 16, i + 1));
     }
   });
+
   console.log(pt16);
 
-  let cipherBuffer: Uint8Array = new Uint8Array(
+  const cipherBuffer = new Uint8Array(
     (Math.floor((pt.length - 1) / 16) + 1) * 16
   );
   pt16.forEach((p, idx) => {
@@ -54,10 +51,9 @@ export function encryptProcess(plainText: string): Uint8Array {
     cipherBuffer.set(c, idx * 16);
   });
 
-  // const isZeroExist = cipherBuffer.indexOf(0);
-  // if (isZeroExist > -1) cipherBuffer = cipherBuffer.slice(0, isZeroExist);
+  const cipherText = bytesToString(cipherBuffer, "ascii");
 
-  return cipherBuffer;
+  return cipherText;
 }
 
 export function decryptProcess(
@@ -131,7 +127,6 @@ export function requestBodyEncrypt(body: any): any {
     if (typeof body[key] === "object") {
       requestBodyEncrypt(body[key]);
     } else {
-      console.log(key, body[key], body[key].toString());
       body[key] = encryptProcess(body[key].toString());
     }
   });
