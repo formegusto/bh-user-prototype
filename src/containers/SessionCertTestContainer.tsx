@@ -2,7 +2,7 @@ import axios from "axios";
 import { publicEncrypt } from "crypto";
 import React from "react";
 import SessionCertTestComponent from "../components/SessionCertTestComponent";
-import { requestBodyEncrypt, responseDecrypt } from "../utils/ARIAUtils";
+import { requestBodyEncrypt } from "../utils/ARIAUtils";
 import getRandomBytes from "../utils/getRandomBytes";
 
 type SessionCert = {
@@ -15,6 +15,7 @@ function SessionCertTestContainer() {
     SessionCert | undefined
   >();
   const [symmetricKey, setSymmetricKey] = React.useState<string | undefined>();
+  const [testString, setTestString] = React.useState<string | undefined>();
 
   React.useEffect(() => {
     if (!sessionCert) {
@@ -49,34 +50,33 @@ function SessionCertTestContainer() {
           symmetricKey: encSymKey,
         })
         .then((res) => {
-          console.log(res.data.decSymKey);
-          console.log(res.data.decSymKey === symmetricKey);
-
-          const body = {
-            test: "hello",
-          };
-          requestBodyEncrypt(body, symmetricKey);
-          axios
-            .post("http://localhost:8080/certTest", body, {
-              headers: {
-                "session-cert-id": sessionCert.id.toString(),
-                "request-encrypt": "cert-community",
-                "response-encrypt": "cert-community",
-              },
-            })
-            .then((res) => {
-              const data = res.data;
-              responseDecrypt(data, symmetricKey);
-              console.log(data);
-            });
+          console.log("test String", res.data);
+          setTestString(res.data.testString);
         });
     }
   }, [sessionCert, symmetricKey]);
 
   React.useEffect(() => {
-    if (sessionCert) {
+    if (testString && symmetricKey && sessionCert) {
+      const body = {
+        testString,
+      };
+      requestBodyEncrypt(body, symmetricKey);
+
+      axios
+        .post("http://localhost:8080/establish", body, {
+          headers: {
+            "session-cert-id": sessionCert.id.toString(),
+            "request-encrypt": "cert-community",
+            "response-encrypt": "cert-community",
+          },
+        })
+        .then((res) => {
+          const data = res.data;
+          console.log(data);
+        });
     }
-  }, [sessionCert]);
+  }, [testString, symmetricKey, sessionCert]);
   return <SessionCertTestComponent />;
 }
 
