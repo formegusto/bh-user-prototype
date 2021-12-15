@@ -23,8 +23,8 @@ export function bytesToString(bytes: any, type: "ascii" | "unicode"): string {
   }
 }
 
-export function encryptProcess(plainText: string): string {
-  const adminKey = process.env.REACT_APP_COMMUNITY_KEY!;
+export function encryptProcess(plainText: string, encryptKey: string): string {
+  const adminKey = encryptKey;
   const aria = new ARIAEngine(256);
   const mk = stringToByte(adminKey, "ascii");
   aria.setKey(mk);
@@ -56,13 +56,8 @@ export function encryptProcess(plainText: string): string {
   return cipherText;
 }
 
-export function decryptProcess(
-  cipherText: string,
-  decryptKey?: string
-): string {
-  const communityKey = decryptKey
-    ? decryptKey
-    : process.env.REACT_APP_COMMUNITY_KEY!;
+export function decryptProcess(cipherText: string, decryptKey: string): string {
+  const communityKey = decryptKey;
   const aria = new ARIAEngine(256);
   const mk = stringToByte(communityKey, "ascii");
   aria.setKey(mk);
@@ -101,7 +96,7 @@ export function decryptProcess(
 
 export function responseDecrypt(
   body: any,
-  decryptKey?: string,
+  decryptKey: string,
   exclude?: string[]
 ): any {
   Object.keys(body).forEach((key) => {
@@ -122,12 +117,12 @@ export function responseDecrypt(
   });
 }
 
-export function requestBodyEncrypt(body: any): any {
+export function requestBodyEncrypt(body: any, encryptKey: string): any {
   Object.keys(body).forEach((key) => {
     if (typeof body[key] === "object") {
-      requestBodyEncrypt(body[key]);
+      requestBodyEncrypt(body[key], encryptKey);
     } else {
-      body[key] = encryptProcess(body[key].toString());
+      body[key] = encryptProcess(body[key].toString(), encryptKey);
     }
   });
 }

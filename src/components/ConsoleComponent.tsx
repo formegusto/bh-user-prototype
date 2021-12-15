@@ -3,7 +3,7 @@ import React from "react";
 import styled from "styled-components";
 import _ from "lodash";
 import { responseDecrypt } from "../utils/ARIAUtils";
-import xlsx from "xlsx";
+// import xlsx from "xlsx";
 import ExcelTestButton from "./ExcelTestButton";
 
 type Props = {
@@ -19,6 +19,7 @@ function ConsoleComponent({ apiKey, decryptKey }: Props) {
       const res = await axios.get("http://localhost:8080/api/humanData", {
         headers: {
           authorization: apiKey,
+          "Response-Encrypt": "user-self",
         },
       });
       setResult(res.data);
@@ -38,13 +39,13 @@ function ConsoleComponent({ apiKey, decryptKey }: Props) {
     setDecryptResult(decrypt);
   }, [decryptKey, result]);
 
-  const onExcelDownload = React.useCallback(() => {
-    const ws = xlsx.utils.json_to_sheet(decryptResult.requestQuery);
-    const wb = xlsx.utils.book_new();
+  // const onExcelDownload = React.useCallback(() => {
+  //   const ws = xlsx.utils.json_to_sheet(decryptResult.requestQuery);
+  //   const wb = xlsx.utils.book_new();
 
-    xlsx.utils.book_append_sheet(wb, ws, "Sheet1");
-    xlsx.writeFile(wb, "test.xlsx");
-  }, [decryptResult]);
+  //   xlsx.utils.book_append_sheet(wb, ws, "Sheet1");
+  //   xlsx.writeFile(wb, "test.xlsx");
+  // }, [decryptResult]);
 
   return (
     <Wrap>

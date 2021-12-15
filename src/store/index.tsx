@@ -2,10 +2,12 @@ import React, { createContext, useState } from "react";
 
 export type ConsoleInfoType = {
   state: {
+    communityKey?: string;
     apiKey: string;
     decryptKey: string;
   };
   actions: {
+    setCommunityKey: (communityKey: string) => void;
     setApiKey: (apiKey: string) => void;
     setDecryptKey: (decryptKey: string) => void;
   };
@@ -17,6 +19,7 @@ const ConsoleInfoContext = createContext<ConsoleInfoType>({
     decryptKey: "",
   },
   actions: {
+    setCommunityKey: () => {},
     setApiKey: () => {},
     setDecryptKey: () => {},
   },
@@ -25,10 +28,11 @@ const ConsoleInfoContext = createContext<ConsoleInfoType>({
 function ConsoleInfoProvider({ children }: React.PropsWithChildren<any>) {
   const [apiKey, setApiKey] = useState<string>("");
   const [decryptKey, setDecryptKey] = useState<string>("");
+  const [communityKey, setCommunityKey] = useState<string | undefined>();
 
   const value = {
-    state: { apiKey, decryptKey },
-    actions: { setApiKey, setDecryptKey },
+    state: { apiKey, decryptKey, communityKey },
+    actions: { setApiKey, setDecryptKey, setCommunityKey },
   };
 
   return (

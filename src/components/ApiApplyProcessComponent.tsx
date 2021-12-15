@@ -12,9 +12,12 @@ import _ from "lodash";
 import ConsoleInfoContext from "../store";
 
 function ApiApplyProcessComponent() {
-  const { actions } = useContext(ConsoleInfoContext);
-  const [token, setToken] = React.useState<any>({});
-  const [decryptToken, setDecryptToken] = React.useState<any>({});
+  const {
+    state: { communityKey },
+    actions,
+  } = useContext(ConsoleInfoContext);
+  const [token, setToken] = React.useState<any>(undefined);
+  const [decryptToken, setDecryptToken] = React.useState<any>(undefined);
   const [userInfo, setUserInfo] = React.useState<any>({});
   const [decryptUserInfo, setDecryptUserInfo] = React.useState<any>({});
   const [applyInfo, setApplyInfo] = React.useState<any>({});
@@ -23,108 +26,141 @@ function ApiApplyProcessComponent() {
   const [decryptConfirmInfo, setDecryptConfirmInfo] = React.useState<any>({});
 
   React.useEffect(() => {
-    const userJoinInfo = {
-      username: "keti1215",
-      email: "keti@keti.re.kr",
-      phone: "070-xxxx-xxxx",
-      nickname: "keti_user",
-      password: "keti123$",
-    };
-    requestBodyEncrypt(userJoinInfo);
-    axios
-      .post("http://localhost:8080/user", userJoinInfo)
-      .then((res) => {
-        setToken({ token: res.data.token });
-      })
-      .catch((err) => {
-        console.error(err);
-      });
-  }, []);
+    console.log(communityKey);
+    if (communityKey) {
+      const userJoinInfo = {
+        username: "keti1215",
+        email: "keti@keti.re.kr",
+        phone: "070-xxxx-xxxx",
+        nickname: "keti_user",
+        password: "keti123$",
+      };
+      requestBodyEncrypt(userJoinInfo, communityKey);
+      axios
+        .post("http://localhost:8080/user", userJoinInfo, {
+          headers: {
+            "Request-Encrypt": "community",
+            "Response-Encrypt": "community",
+          },
+        })
+        .then((res) => {
+          setToken({ token: res.data.token });
+        })
+        .catch((err) => {
+          console.error(err);
+        });
+    }
+  }, [communityKey]);
 
   React.useEffect(() => {
-    const decrypt = _.cloneDeep(token);
-    responseDecrypt(decrypt, undefined, ["status"]);
-    setDecryptToken(decrypt);
-  }, [token]);
+    if (token && communityKey) {
+      const decrypt = _.cloneDeep(token);
+      responseDecrypt(decrypt, communityKey, ["status"]);
+      setDecryptToken(decrypt);
+    }
+  }, [token, communityKey]);
 
   React.useEffect(() => {
-    const token = decryptToken.token;
-    axios
-      .get("http://localhost:8080/user/check", {
-        headers: {
-          authorization: token,
-        },
-      })
-      .then((res) => {
-        setUserInfo(res.data.user);
-      })
-      .catch((err) => {
-        console.error(err);
-      });
-  }, [decryptToken]);
-
-  React.useEffect(() => {
-    const decrypt = _.cloneDeep(userInfo);
-    responseDecrypt(decrypt, undefined, ["password", "createdAt", "updatedAt"]);
-    setDecryptUserInfo(decrypt);
-  }, [userInfo]);
-
-  React.useEffect(() => {
-    const decrypt = _.cloneDeep(applyInfo);
-    responseDecrypt(decrypt, undefined, ["id", "createdAt", "updatedAt"]);
-    setDecryptApplyInfo(decrypt);
-    actions.setApiKey(decrypt.apiKey);
-    actions.setDecryptKey(decrypt.decryptKey);
-  }, [applyInfo, actions]);
-
-  React.useEffect(() => {
-    const decrypt = _.cloneDeep(confirmInfo);
-    responseDecrypt(decrypt, undefined, ["id", "createdAt", "updatedAt"]);
-    setDecryptConfirmInfo(decrypt);
-  }, [confirmInfo]);
-
-  const userApiApply = React.useCallback(async () => {
-    const token = decryptToken.token!;
-
-    try {
-      const res = await axios.post(
-        "http://localhost:8080/apiService/apply",
-        {
-          purpose: encryptProcess("연구목적"),
-        },
-        {
+    if (decryptToken) {
+      const token = decryptToken.token;
+      console.log(token);
+      axios
+        .get("http://localhost:8080/user/check", {
           headers: {
             authorization: token,
+            "Request-Encrypt": "community",
+            "Response-Encrypt": "community",
           },
-        }
-      );
-
-      setApplyInfo(res.data.application);
-    } catch (err) {
-      console.error(err);
+        })
+        .then((res) => {
+          setUserInfo(res.data.user);
+        })
+        .catch((err) => {
+          console.error(err);
+        });
     }
   }, [decryptToken]);
 
-  const adminApiConfirm = React.useCallback(async () => {
-    const requestAdminKey = process.env.REACT_APP_ADMIN_KEY!;
-
-    try {
-      const res = await axios.patch(
-        "http://localhost:8080/admin/apiService/confirm",
-        {
-          id: encryptProcess(applyInfo.id),
-        },
-        {
-          headers: {
-            authorization: requestAdminKey,
-          },
-        }
-      );
-      setConfirmInfo(res.data.application);
-    } catch (err) {
-      console.error(err);
+  React.useEffect(() => {
+    if (communityKey) {
+      const decrypt = _.cloneDeep(userInfo);
+      responseDecrypt(decrypt, communityKey, [
+        "password",
+        "createdAt",
+        "updatedAt",
+      ]);
+      setDecryptUserInfo(decrypt);
     }
-  }, [applyInfo]);
+  }, [userInfo, communityKey]);
+
+  React.useEffect(() => {
+    if (communityKey) {
+      const decrypt = _.cloneDeep(applyInfo);
+      responseDecrypt(decrypt, communityKey, ["id", "createdAt", "updatedAt"]);
+      setDecryptApplyInfo(decrypt);
+      actions.setApiKey(decrypt.apiKey);
+      actions.setDecryptKey(decrypt.decryptKey);
+    }
+  }, [applyInfo, actions, communityKey]);
+
+  React.useEffect(() => {
+    if (communityKey) {
+      const decrypt = _.cloneDeep(confirmInfo);
+      responseDecrypt(decrypt, communityKey, ["id", "createdAt", "updatedAt"]);
+      setDecryptConfirmInfo(decrypt);
+    }
+  }, [confirmInfo, communityKey]);
+
+  const userApiApply = React.useCallback(async () => {
+    if (communityKey) {
+      const token = decryptToken.token!;
+
+      try {
+        const res = await axios.post(
+          "http://localhost:8080/apiService/apply",
+          {
+            purpose: encryptProcess("연구목적", communityKey),
+          },
+          {
+            headers: {
+              authorization: token,
+              "Request-Encrypt": "community",
+              "Response-Encrypt": "community",
+            },
+          }
+        );
+
+        setApplyInfo(res.data.application);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  }, [decryptToken, communityKey]);
+
+  const adminApiConfirm = React.useCallback(async () => {
+    if (communityKey) {
+      const requestAdminKey = process.env.REACT_APP_ADMIN_KEY!;
+
+      try {
+        const res = await axios.patch(
+          "http://localhost:8080/admin/apiService/confirm",
+          {
+            id: encryptProcess(applyInfo.id, communityKey),
+          },
+          {
+            headers: {
+              authorization: requestAdminKey,
+              "Request-Encrypt": "community",
+              "Response-Encrypt": "community",
+            },
+          }
+        );
+        setConfirmInfo(res.data.application);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  }, [applyInfo, communityKey]);
 
   return (
     <Wrap>
