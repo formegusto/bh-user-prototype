@@ -1,8 +1,7 @@
 import axios from "axios";
 import React from "react";
 import styled from "styled-components";
-import _ from "lodash";
-import { responseDecrypt } from "../utils/ARIAUtils";
+import { decryptProcess } from "../utils/ARIAUtils";
 // import xlsx from "xlsx";
 import ExcelTestButton from "./ExcelTestButton";
 
@@ -22,21 +21,18 @@ function ConsoleComponent({ apiKey, decryptKey }: Props) {
           "Response-Encrypt": "user-self",
         },
       });
-      setResult(res.data);
+      setResult(res.data["encryptBody"]);
       setDecryptResult(null);
     } catch (err) {}
   }, [apiKey]);
 
   const onDecryptResult = React.useCallback(() => {
-    const decrypt = _.cloneDeep(result);
-    responseDecrypt(decrypt, decryptKey, [
-      "status",
-      "query",
-      "id",
-      "createdAt",
-      "updatedAt",
-    ]);
-    setDecryptResult(decrypt);
+    let decrypt = result;
+    decrypt = decryptProcess(decrypt, decryptKey);
+
+    const decBody = JSON.parse(decrypt);
+    console.log(decBody);
+    setDecryptResult(decBody);
   }, [decryptKey, result]);
 
   // const onExcelDownload = React.useCallback(() => {

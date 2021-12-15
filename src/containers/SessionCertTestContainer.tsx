@@ -1,16 +1,20 @@
 import axios from "axios";
 import { publicEncrypt } from "crypto";
-import React from "react";
+import React, { useContext } from "react";
 import SessionCertTestComponent from "../components/SessionCertTestComponent";
-import { requestBodyEncrypt } from "../utils/ARIAUtils";
+import ConsoleInfoContext from "../store";
+import { decryptProcess, encryptProcess } from "../utils/ARIAUtils";
 import getRandomBytes from "../utils/getRandomBytes";
 
-type SessionCert = {
+export type SessionCert = {
   id: number;
   publicKey: string;
 };
 
 function SessionCertTestContainer() {
+  const {
+    actions: { setSessionCert: globalSessionCertSetting, setCommunityKey },
+  } = useContext(ConsoleInfoContext);
   const [sessionCert, setSessionCert] = React.useState<
     SessionCert | undefined
   >();
@@ -19,7 +23,7 @@ function SessionCertTestContainer() {
 
   React.useEffect(() => {
     if (!sessionCert) {
-      axios.get("http://localhost:8080/publicKey").then((res) => {
+      axios.get("http://localhost:8080/sessionCert/publicKey").then((res) => {
         setSessionCert(res.data.sessionCert);
         window.onunload = () => {
           axios.delete(
@@ -45,38 +49,49 @@ function SessionCertTestContainer() {
       console.log("대칭키 암호화 :", encSymKey);
 
       axios
-        .post("http://localhost:8080/symmetricKey", {
+        .post("http://localhost:8080/sessionCert/symmetricKey", {
           id: sessionCert.id,
           symmetricKey: encSymKey,
         })
         .then((res) => {
           console.log("test String", res.data);
-          setTestString(res.data.testString);
+          setTestString(res.data.encryptBody);
         });
     }
   }, [sessionCert, symmetricKey]);
 
   React.useEffect(() => {
     if (testString && symmetricKey && sessionCert) {
-      const body = {
-        testString,
-      };
-      requestBodyEncrypt(body, symmetricKey);
+      const decBody = decryptProcess(testString, symmetricKey);
+      const encBody = encryptProcess(decBody, symmetricKey);
 
       axios
-        .post("http://localhost:8080/establish", body, {
-          headers: {
-            "session-cert-id": sessionCert.id.toString(),
-            "request-encrypt": "cert-community",
-            "response-encrypt": "cert-community",
-          },
-        })
+        .post(
+          "http://localhost:8080/sessionCert/establish",
+          { encryptBody: encBody },
+          {
+            headers: {
+              "session-cert-id": sessionCert.id.toString(),
+              "request-encrypt": "cert-community",
+              "response-encrypt": "cert-community",
+            },
+          }
+        )
         .then((res) => {
-          const data = res.data;
-          console.log(data);
+          const { establish } = res.data;
+          if (establish) {
+            globalSessionCertSetting(sessionCert);
+            setCommunityKey(symmetricKey);
+          }
         });
     }
-  }, [testString, symmetricKey, sessionCert]);
+  }, [
+    testString,
+    symmetricKey,
+    sessionCert,
+    setCommunityKey,
+    globalSessionCertSetting,
+  ]);
   return <SessionCertTestComponent />;
 }
 

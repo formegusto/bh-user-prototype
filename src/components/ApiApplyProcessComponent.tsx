@@ -2,165 +2,183 @@ import axios from "axios";
 import React, { useContext } from "react";
 import styled from "styled-components";
 import { Box, BoxBody, BoxTitle, BoxWrap } from "../styles";
-import {
-  encryptProcess,
-  requestBodyEncrypt,
-  responseDecrypt,
-} from "../utils/ARIAUtils";
+import { decryptProcess, encryptProcess } from "../utils/ARIAUtils";
 import BoxComponent from "./BoxComponent";
 import _ from "lodash";
 import ConsoleInfoContext from "../store";
 
 function ApiApplyProcessComponent() {
   const {
-    state: { communityKey },
+    state: { communityKey, sessionCert },
     actions,
   } = useContext(ConsoleInfoContext);
   const [token, setToken] = React.useState<any>(undefined);
   const [decryptToken, setDecryptToken] = React.useState<any>(undefined);
-  const [userInfo, setUserInfo] = React.useState<any>({});
-  const [decryptUserInfo, setDecryptUserInfo] = React.useState<any>({});
-  const [applyInfo, setApplyInfo] = React.useState<any>({});
-  const [decryptApplyInfo, setDecryptApplyInfo] = React.useState<any>({});
-  const [confirmInfo, setConfirmInfo] = React.useState<any>({});
-  const [decryptConfirmInfo, setDecryptConfirmInfo] = React.useState<any>({});
+  const [userInfo, setUserInfo] = React.useState<any>(undefined);
+  const [decryptUserInfo, setDecryptUserInfo] = React.useState<any>(undefined);
+  const [applyInfo, setApplyInfo] = React.useState<any>(undefined);
+  const [decryptApplyInfo, setDecryptApplyInfo] =
+    React.useState<any>(undefined);
+  const [confirmInfo, setConfirmInfo] = React.useState<any>(undefined);
+  const [decryptConfirmInfo, setDecryptConfirmInfo] =
+    React.useState<any>(undefined);
 
   React.useEffect(() => {
     console.log(communityKey);
-    if (communityKey) {
-      const userJoinInfo = {
+    if (communityKey && sessionCert) {
+      const userInfo = {
         username: "keti1215",
         email: "keti@keti.re.kr",
         phone: "070-xxxx-xxxx",
         nickname: "keti_user",
         password: "keti123$",
       };
-      requestBodyEncrypt(userJoinInfo, communityKey);
+      const reqBody = JSON.stringify(userInfo);
+      const encReqBody = encryptProcess(reqBody, communityKey);
       axios
-        .post("http://localhost:8080/user", userJoinInfo, {
-          headers: {
-            "Request-Encrypt": "community",
-            "Response-Encrypt": "community",
+        .post(
+          "http://localhost:8080/user",
+          {
+            encryptBody: encReqBody,
           },
-        })
+          {
+            headers: {
+              "session-cert-id": sessionCert.id.toString(),
+              "request-encrypt": "cert-community",
+              "response-encrypt": "cert-community",
+            },
+          }
+        )
         .then((res) => {
-          setToken({ token: res.data.token });
+          const encBodyStr = res.data["encryptBody"];
+          setToken(encBodyStr);
         })
         .catch((err) => {
           console.error(err);
         });
     }
-  }, [communityKey]);
+  }, [communityKey, sessionCert]);
 
   React.useEffect(() => {
     if (token && communityKey) {
-      const decrypt = _.cloneDeep(token);
-      responseDecrypt(decrypt, communityKey, ["status"]);
-      setDecryptToken(decrypt);
+      console.log("token", token);
+      const decrypt = token;
+      const decBodyStr = decryptProcess(decrypt, communityKey);
+      const decBody = JSON.parse(decBodyStr);
+      setDecryptToken(decBody.token);
     }
   }, [token, communityKey]);
 
   React.useEffect(() => {
-    if (decryptToken) {
-      const token = decryptToken.token;
-      console.log(token);
+    if (decryptToken && sessionCert) {
       axios
         .get("http://localhost:8080/user/check", {
           headers: {
-            authorization: token,
-            "Request-Encrypt": "community",
-            "Response-Encrypt": "community",
+            authorization: decryptToken,
+            "session-cert-id": sessionCert.id.toString(),
+            "request-encrypt": "cert-community",
+            "response-encrypt": "cert-community",
           },
         })
         .then((res) => {
-          setUserInfo(res.data.user);
+          setUserInfo(res.data["encryptBody"]);
         })
         .catch((err) => {
           console.error(err);
         });
     }
-  }, [decryptToken]);
+  }, [decryptToken, sessionCert]);
 
   React.useEffect(() => {
-    if (communityKey) {
+    if (userInfo && communityKey) {
       const decrypt = _.cloneDeep(userInfo);
-      responseDecrypt(decrypt, communityKey, [
-        "password",
-        "createdAt",
-        "updatedAt",
-      ]);
-      setDecryptUserInfo(decrypt);
+      const decBodyStr = decryptProcess(decrypt, communityKey);
+      const decBody = JSON.parse(decBodyStr);
+      setDecryptUserInfo(decBody.user);
     }
   }, [userInfo, communityKey]);
 
   React.useEffect(() => {
-    if (communityKey) {
-      const decrypt = _.cloneDeep(applyInfo);
-      responseDecrypt(decrypt, communityKey, ["id", "createdAt", "updatedAt"]);
-      setDecryptApplyInfo(decrypt);
-      actions.setApiKey(decrypt.apiKey);
-      actions.setDecryptKey(decrypt.decryptKey);
+    if (communityKey && applyInfo) {
+      const decrypt = applyInfo;
+      const decBodyStr = decryptProcess(decrypt, communityKey);
+      const decBody = JSON.parse(decBodyStr);
+      setDecryptApplyInfo(decBody.application);
+      actions.setApiKey(decBody.application.apiKey);
+      actions.setDecryptKey(decBody.application.decryptKey);
     }
   }, [applyInfo, actions, communityKey]);
 
   React.useEffect(() => {
-    if (communityKey) {
-      const decrypt = _.cloneDeep(confirmInfo);
-      responseDecrypt(decrypt, communityKey, ["id", "createdAt", "updatedAt"]);
-      setDecryptConfirmInfo(decrypt);
+    if (communityKey && confirmInfo) {
+      const decrypt = confirmInfo;
+      const decBodyStr = decryptProcess(decrypt, communityKey);
+      const decBody = JSON.parse(decBodyStr);
+      console.log(decBody);
+      setDecryptConfirmInfo(decBody.application);
     }
   }, [confirmInfo, communityKey]);
 
   const userApiApply = React.useCallback(async () => {
-    if (communityKey) {
-      const token = decryptToken.token!;
-
+    if (communityKey && sessionCert) {
       try {
+        const body = {
+          purpose: "연구목적",
+        };
+        const encBody = encryptProcess(JSON.stringify(body), communityKey);
         const res = await axios.post(
           "http://localhost:8080/apiService/apply",
           {
-            purpose: encryptProcess("연구목적", communityKey),
+            encryptBody: encBody,
           },
           {
             headers: {
-              authorization: token,
-              "Request-Encrypt": "community",
-              "Response-Encrypt": "community",
+              authorization: decryptToken,
+              "session-cert-id": sessionCert.id.toString(),
+              "request-encrypt": "cert-community",
+              "response-encrypt": "cert-community",
             },
           }
         );
 
-        setApplyInfo(res.data.application);
+        setApplyInfo(res.data["encryptBody"]);
       } catch (err) {
         console.error(err);
       }
     }
-  }, [decryptToken, communityKey]);
+  }, [decryptToken, communityKey, sessionCert]);
 
   const adminApiConfirm = React.useCallback(async () => {
-    if (communityKey) {
+    if (communityKey && sessionCert) {
       const requestAdminKey = process.env.REACT_APP_ADMIN_KEY!;
 
       try {
+        const body = {
+          id: decryptApplyInfo.id,
+        };
+        console.log(body);
+        const encBody = encryptProcess(JSON.stringify(body), communityKey);
+        console.log(encBody);
         const res = await axios.patch(
           "http://localhost:8080/admin/apiService/confirm",
           {
-            id: encryptProcess(applyInfo.id, communityKey),
+            encryptBody: encBody,
           },
           {
             headers: {
               authorization: requestAdminKey,
-              "Request-Encrypt": "community",
-              "Response-Encrypt": "community",
+              "session-cert-id": sessionCert.id.toString(),
+              "request-encrypt": "cert-community",
+              "response-encrypt": "cert-community",
             },
           }
         );
-        setConfirmInfo(res.data.application);
+        setConfirmInfo(res.data["encryptBody"]);
       } catch (err) {
         console.error(err);
       }
     }
-  }, [applyInfo, communityKey]);
+  }, [decryptApplyInfo, communityKey, sessionCert]);
 
   return (
     <Wrap>

@@ -39,8 +39,6 @@ export function encryptProcess(plainText: string, encryptKey: string): string {
     }
   });
 
-  console.log(pt16);
-
   const cipherBuffer = new Uint8Array(
     (Math.floor((pt.length - 1) / 16) + 1) * 16
   );
