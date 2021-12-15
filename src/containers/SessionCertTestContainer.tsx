@@ -20,7 +20,11 @@ function SessionCertTestContainer() {
     if (!sessionCert) {
       axios.get("http://localhost:8080/publicKey").then((res) => {
         setSessionCert(res.data.sessionCert);
-
+        window.onunload = () => {
+          axios.delete(
+            `http://localhost:8080/sessionCert?id=${res.data.sessionCert.id}`
+          );
+        };
         // 대칭키 생성
         const symKey = getRandomBytes(32);
         setSymmetricKey(symKey);
@@ -68,6 +72,11 @@ function SessionCertTestContainer() {
         });
     }
   }, [sessionCert, symmetricKey]);
+
+  React.useEffect(() => {
+    if (sessionCert) {
+    }
+  }, [sessionCert]);
   return <SessionCertTestComponent />;
 }
 
