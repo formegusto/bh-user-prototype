@@ -18,7 +18,6 @@ function ConsoleComponent({ apiKey, decryptKey }: Props) {
       const res = await axios.get("http://localhost:8080/api/humanData", {
         headers: {
           authorization: apiKey,
-          "Response-Encrypt": "user-self",
         },
       });
       setResult(res.data["encryptBody"]);
