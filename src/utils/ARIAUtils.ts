@@ -48,7 +48,6 @@ export function encryptProcess(plainText: string, encryptKey: string): string {
 
     cipherBuffer.set(c, idx * 16);
   });
-
   const cipherText = bytesToString(cipherBuffer, "ascii");
 
   return cipherText;

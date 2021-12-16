@@ -23,21 +23,48 @@ function SessionCertTestContainer() {
 
   React.useEffect(() => {
     if (!sessionCert) {
+      const certInfo = sessionStorage.getItem("cert-info");
       axios.get("http://localhost:8080/sessionCert/publicKey").then((res) => {
         setSessionCert(res.data.sessionCert);
-        window.onunload = () => {
-          axios.delete(
-            `http://localhost:8080/sessionCert?id=${res.data.sessionCert.id}`
-          );
-        };
+        // window.onunload = () => {
+        //   axios.delete(
+        //     `http://localhost:8080/sessionCert?id=${res.data.sessionCert.id}`
+        //   );
+        // };
         // 대칭키 생성
         const symKey = getRandomBytes(32);
         setSymmetricKey(symKey);
       });
+      if (certInfo) {
+        // const _certInfo = JSON.parse(certInfo);
+        // const sessionCert: SessionCert = {
+        //   id: (_certInfo as any).id,
+        //   publicKey: (_certInfo as any).publicKey,
+        // };
+        // globalSessionCertSetting(sessionCert);
+        // setCommunityKey((_certInfo as any).symmetricKey);
+        // // window.onunload = () => {
+        // //   axios.delete(
+        // //     `http://localhost:8080/sessionCert?id=${sessionCert.id}`
+        // //   );
+        // // };
+      } else {
+        // axios.get("http://localhost:8080/sessionCert/publicKey").then((res) => {
+        //   setSessionCert(res.data.sessionCert);
+        //   // window.onunload = () => {
+        //   //   axios.delete(
+        //   //     `http://localhost:8080/sessionCert?id=${res.data.sessionCert.id}`
+        //   //   );
+        //   // };
+        //   // 대칭키 생성
+        //   const symKey = getRandomBytes(32);
+        //   setSymmetricKey(symKey);
+        // });
+      }
     } else {
       console.log(sessionCert);
     }
-  }, [sessionCert]);
+  }, [sessionCert, globalSessionCertSetting, setCommunityKey]);
 
   React.useEffect(() => {
     if (sessionCert && symmetricKey) {
@@ -82,6 +109,12 @@ function SessionCertTestContainer() {
           if (establish) {
             globalSessionCertSetting(sessionCert);
             setCommunityKey(symmetricKey);
+
+            const certInfo = {
+              ...sessionCert,
+              symmetricKey,
+            };
+            sessionStorage.setItem("cert-info", JSON.stringify(certInfo));
           }
         });
     }

@@ -30,7 +30,7 @@ function ApiApplyProcessComponent() {
         username: "keti1215",
         email: "keti@keti.re.kr",
         phone: "070-xxxx-xxxx",
-        nickname: "keti_user",
+        nickname: "케티사용자",
         password: "keti123$",
       };
       const reqBody = JSON.stringify(userInfo);
