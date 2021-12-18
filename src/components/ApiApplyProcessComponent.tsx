@@ -31,26 +31,22 @@ function ApiApplyProcessComponent() {
         email: "keti@keti.re.kr",
         phone: "070-xxxx-xxxx",
         nickname: "케티사용자",
+        association: "KETI",
         password: "keti123$",
       };
       const reqBody = JSON.stringify(userInfo);
       const encReqBody = encryptProcess(reqBody, communityKey);
       axios
-        .post(
-          "http://localhost:8080/user",
-          {
-            encryptBody: encReqBody,
+        .post("http://localhost:8080/user", encReqBody, {
+          headers: {
+            "session-cert-id": sessionCert.id.toString(),
+            "Content-Type": "text/plain",
+            "request-encrypt": "cert-community",
+            "response-encrypt": "cert-community",
           },
-          {
-            headers: {
-              "session-cert-id": sessionCert.id.toString(),
-              "request-encrypt": "cert-community",
-              "response-encrypt": "cert-community",
-            },
-          }
-        )
+        })
         .then((res) => {
-          const encBodyStr = res.data["encryptBody"];
+          const encBodyStr = res.data;
           setToken(encBodyStr);
         })
         .catch((err) => {
@@ -81,7 +77,7 @@ function ApiApplyProcessComponent() {
           },
         })
         .then((res) => {
-          setUserInfo(res.data["encryptBody"]);
+          setUserInfo(res.data);
         })
         .catch((err) => {
           console.error(err);
@@ -128,20 +124,19 @@ function ApiApplyProcessComponent() {
         const encBody = encryptProcess(JSON.stringify(body), communityKey);
         const res = await axios.post(
           "http://localhost:8080/apiService/apply",
-          {
-            encryptBody: encBody,
-          },
+          encBody,
           {
             headers: {
               authorization: decryptToken,
               "session-cert-id": sessionCert.id.toString(),
+              "Content-Type": "text/plain",
               "request-encrypt": "cert-community",
               "response-encrypt": "cert-community",
             },
           }
         );
 
-        setApplyInfo(res.data["encryptBody"]);
+        setApplyInfo(res.data);
       } catch (err) {
         console.error(err);
       }
@@ -161,19 +156,18 @@ function ApiApplyProcessComponent() {
         console.log(encBody);
         const res = await axios.patch(
           "http://localhost:8080/admin/apiService/confirm",
-          {
-            encryptBody: encBody,
-          },
+          encBody,
           {
             headers: {
               authorization: requestAdminKey,
               "session-cert-id": sessionCert.id.toString(),
+              "Content-Type": "text/plain",
               "request-encrypt": "cert-community",
               "response-encrypt": "cert-community",
             },
           }
         );
-        setConfirmInfo(res.data["encryptBody"]);
+        setConfirmInfo(res.data);
       } catch (err) {
         console.error(err);
       }

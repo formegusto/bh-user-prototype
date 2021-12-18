@@ -82,7 +82,7 @@ function SessionCertTestContainer() {
         })
         .then((res) => {
           console.log("test String", res.data);
-          setTestString(res.data.encryptBody);
+          setTestString(res.data);
         });
     }
   }, [sessionCert, symmetricKey]);
@@ -93,17 +93,14 @@ function SessionCertTestContainer() {
       const encBody = encryptProcess(decBody, symmetricKey);
 
       axios
-        .post(
-          "http://localhost:8080/sessionCert/establish",
-          { encryptBody: encBody },
-          {
-            headers: {
-              "session-cert-id": sessionCert.id.toString(),
-              "request-encrypt": "cert-community",
-              "response-encrypt": "cert-community",
-            },
-          }
-        )
+        .post("http://localhost:8080/sessionCert/establish", encBody, {
+          headers: {
+            "session-cert-id": sessionCert.id.toString(),
+            "Content-Type": "text/plain",
+            "request-encrypt": "cert-community",
+            "response-encrypt": "cert-community",
+          },
+        })
         .then((res) => {
           const { establish } = res.data;
           if (establish) {
