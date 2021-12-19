@@ -28,11 +28,11 @@ function ApiApplyProcessComponent() {
     if (communityKey && sessionCert) {
       const userInfo = {
         username: "keti1215",
+        password: "keti123$",
+        name: "케티연구원",
+        organization: "KETI",
         email: "keti@keti.re.kr",
         phone: "070-xxxx-xxxx",
-        nickname: "케티사용자",
-        association: "KETI",
-        password: "keti123$",
       };
       const reqBody = JSON.stringify(userInfo);
       const encReqBody = encryptProcess(reqBody, communityKey);
@@ -101,7 +101,7 @@ function ApiApplyProcessComponent() {
       const decBody = JSON.parse(decBodyStr);
       setDecryptApplyInfo(decBody.application);
       actions.setApiKey(decBody.application.apiKey);
-      actions.setDecryptKey(decBody.application.decryptKey);
+      actions.setDecryptKey(decBody.application.symmetricKey);
     }
   }, [applyInfo, actions, communityKey]);
 

@@ -15,14 +15,11 @@ function ConsoleComponent({ apiKey, decryptKey }: Props) {
 
   const actionApi = React.useCallback(async () => {
     try {
-      const res = await axios.get(
-        "http://localhost:8080/api/bems-hdms/1/1?include=temperature,humidity,lux&startDate=2021-12-1813:05&endDate=2021-12-18T13:10",
-        {
-          headers: {
-            authorization: apiKey,
-          },
-        }
-      );
+      const res = await axios.get("http://localhost:8080/api/bems-hdms", {
+        headers: {
+          authorization: apiKey,
+        },
+      });
       setResult(res.data);
       setDecryptResult(null);
     } catch (err: any) {
