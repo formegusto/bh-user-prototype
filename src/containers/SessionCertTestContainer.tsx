@@ -93,7 +93,7 @@ function SessionCertTestContainer() {
       const encBody = encryptProcess(decBody, symmetricKey);
 
       axios
-        .post("http://localhost:8080/sessionCert/establish", encBody, {
+        .patch("http://localhost:8080/sessionCert/establish", encBody, {
           headers: {
             "session-cert-id": sessionCert.id.toString(),
             "Content-Type": "text/plain",
